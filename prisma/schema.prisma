@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id       Int      @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+model Image {
+  id        Int     @id @default(autoincrement())
+  url       String
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+}
+
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String
+  price        Int      @default(0)
+  quantity     Int
+
+  image        Image[]  
+  category     Category @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+
+  item        Item[]
+}
+
+
+model Order {
+  id           Int      @id @default(autoincrement())
+  total_price  Int      @default(0)
+  payment      Payment?
+  deliver      Deliver?
+
+  customer     Customer @relation(fields: [customerId], references: [id])
+  customerId   Int
+  address      Address?
+  items        Item[]
+}
+
+model Item {
+  id         Int      @id @default(autoincrement())
+  quantity   Int      @default(1)
+ 
+  name       String
+  price      Int
+  amount     Int
+
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    Int
+}
+
+enum Status {
+  pending      
+  success
+  cancel
+}
+
+model Payment {
+  id              Int             @id @default(autoincrement())
+  status          Status          
+
+  order           Order           @relation(fields: [orderId], references: [id])
+  orderId         Int             @unique
+
+  createdAt       DateTime        @default(now())
+}
+
+model Customer {
+  id              Int             @id @default(autoincrement())
+  email           String          @unique
+  phone_number    Int
+  name            String
+
+  orders          Order[]
+}
+
+model Deliver {
+  id              Int             @id @default(autoincrement())
+
+  order           Order           @relation(fields: [orderId], references: [id])
+  orderId         Int             @unique
+
+  address         Address   @relation(fields: [addressId], references: [id])
+  addressId       Int             @unique
+
+  worker          Worker?   @relation(fields: [workerId], references: [id])
+  workerId        Int?
+
+  startedAt       DateTime        @default(now())
+  endedAt         DateTime?
+}
+
+
+model Address {
+  id            Int      @id @default(autoincrement())
+  district      String
+  commitee      String
+  address       String
+  phone_number1 Int
+
+  deliverId     Deliver?
+  order         Order @relation(fields: [orderId] ,references: [id])
+  orderId       Int   @unique
+}
+
+enum Delivering{
+  yes
+  no
+}
+
+model Worker {
+  id              Int             @id @default(autoincrement())
+  name            String
+  email           String          @unique
+  phone           String          @unique
+  status          Delivering      @default(no)
+  delivers        Deliver[]
+}
